@@ -1,0 +1,215 @@
+const { default: mongoose } = require('mongoose');
+const Seat = require('../models/Seat');
+const Student = require('../models/Student');
+
+// Initialize seats (run once)
+const createSeat = async(req, res)=>{
+  try {
+    const {seatNumber} = req.body
+
+    if(!seatNumber){
+      return res.status(400).json({
+        message : 'please enter a seat Number'
+      })
+    }
+
+    const isSeatExist = await Seat.findOne({seatNumber : seatNumber})
+
+    if(isSeatExist){
+      return res.status(400).json({
+        message : "seat is alreay exist please enter another number"
+      })
+    }
+
+    const data = await Seat.create({
+      seatNumber : seatNumber
+    })
+
+    res.status(200).json({message : `seat ${seatNumber} created successfully !`})
+
+    await data.save()
+    
+  } catch (err) {
+    res.status(500).json({
+      message : "something went wrong !"
+    })
+  }
+}
+
+const deleteSeat = async(req, res)=>{
+  try {
+    const {seatNumber} = req.body
+
+    if(!seatNumber){
+      return res.status(400).json({
+        message : 'please enter a seat Number'
+      })
+    }
+
+    const isSeatExist = await Seat.findOne({seatNumber : seatNumber})
+
+    if(!isSeatExist){
+      return res.status(400).json({
+        message : "seat not found !"
+      })
+    }
+
+    await isSeatExist.deleteOne()
+
+    res.status(200).json( {message : `seat ${seatNumber} deleted successfully !`})
+
+    
+    
+  } catch (err) {
+    res.status(500).json({
+      message : "something went wrong !"
+    })
+  }
+}
+const initializeSeats = async (req, res) => {
+  try {
+    const existingSeats = await Seat.countDocuments();
+    if (existingSeats > 0) {
+      return res.json({ message: 'Seats already initialized' });
+    }
+
+    const seats = [];
+    for (let i = 1; i <= 50; i++) {
+      const seatType = i <= 20 ? 'regular' : i <= 35 ? 'premium' : 'vip';
+      seats.push({
+        seatNumber: i,
+        type: seatType,
+        position: {
+          row: Math.ceil(i / 10),
+          column: ((i - 1) % 10) + 1
+        }
+      });
+    }
+
+    await Seat.insertMany(seats);
+    res.json({ message: 'Seats initialized successfully', count: seats.length });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all seats
+const getSeats = async (req, res) => {
+  try {
+    const seats = await Seat.find().populate('student.studentId', 'name').sort({ seatNumber: 1 });
+    res.json(seats);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Assign seat to student
+const assignSeat = async (req, res) => {
+  try {
+    const { seatId, studentId, seatOcupiedTiming } = req.body;
+
+    // Check if seat exists and is available
+
+    const isStudentAlreadyAssigned = await Seat.findOne({'student.studentId' : studentId})
+    
+    if(isStudentAlreadyAssigned){
+      return res.status(400).json({
+        message : `student is already assign a seatNo. ${isStudentAlreadyAssigned.seatNumber} `,
+      })
+    }
+    const seat = await Seat.findById(seatId);
+    if (!seat) {
+      return res.status(404).json({ message: 'Seat not found' });
+    }
+    if (seat.occupied) {
+      return res.status(400).json({ message: 'Seat is already occupied' });
+    }
+
+    // Check if student exists
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Update seat
+    if(seatOcupiedTiming) seat.seatOcupiedTiming = seatOcupiedTiming
+    seat.occupied = true;
+    seat.student.push({studentId : studentId})
+    await seat.save();
+
+    // Update student
+    student.seatNumber = seat.seatNumber;
+    await student.save();
+
+    res.json({ message: 'Seat assigned successfully', seat });
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Unassign seat
+const unassignSeat = async (req, res) => {
+  try {
+    const seat = await Seat.findById(req.params.id).populate("student.studentId");
+    if (!seat) {
+      return res.status(404).json({ message: 'Seat not found' });
+    }
+
+    if (!seat.occupied) {
+      return res.status(400).json({ message: 'Seat is not occupied' });
+    }
+
+    // Get student ID before clearing
+    const studentId = seat.student[0]?.studentId;
+
+    // Clear seat assignment
+    seat.student = [];
+    seat.occupied = false;
+    seat.seatOcupiedTiming = 'none';
+    await seat.save();
+
+    // Update student record
+    if (studentId) {
+      const Student = require('../models/Student');
+      await Student.findByIdAndUpdate(studentId, { seatNumber: null });
+    }
+
+    res.json({ message: 'Seat unassigned successfully', seat });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get seat statistics
+const getSeatStats = async (req, res) => {
+  try {
+    const totalSeats = await Seat.countDocuments();
+    const occupiedSeats = await Seat.countDocuments({ occupied: true });
+    const availableSeats = totalSeats - occupiedSeats;
+    const fullseat = await Seat.countDocuments({seatOcupiedTiming : 'full'})
+    const halfseat = await Seat.countDocuments({seatOcupiedTiming : 'half'})
+
+
+    
+    res.json({
+      totalSeats,
+      occupiedSeats,
+      availableSeats,
+      halfseat, 
+      fullseat,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  initializeSeats,
+  getSeats,
+  assignSeat,
+  unassignSeat,
+  getSeatStats,
+  createSeat,
+  deleteSeat
+};
