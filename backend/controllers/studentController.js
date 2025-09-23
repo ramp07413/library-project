@@ -1,6 +1,7 @@
 const Student = require('../models/Student');
 const Payment = require('../models/Payment');
 const { validationResult } = require('express-validator');
+const Seat = require('../models/Seat');
 
 // Get all students
 const getStudents = async (req, res) => {
@@ -18,21 +19,52 @@ const getStudents = async (req, res) => {
     if (status && status !== 'all') query.status = status;
     if(seatingType && seatingType !== 'all') query.seatingType = seatingType;
 
-    const students = await Student.find(query).sort({ createdAt: -1 });
-    res.json(students);
-  } catch (error) {
+    let students = await Student.find(query).sort({ createdAt: -1 });
+
+  const AllStudents = []
+    for (let detail of students){
+      let seat = await Seat.findOne({"student.studentId" : detail._id})  
+      console.log(seat)
+
+      if(seat){
+        AllStudents.push({...detail._doc, seatNo : seat.seatNumber })
+      }
+      else{
+        AllStudents.push(detail._doc)
+      }
+    }
+  if(!AllStudents || AllStudents.lenght === 0){
+    return res.status(500).json({
+      sucess : false,
+      message : "something went wrong"
+    })
+  }
+    res.json(AllStudents);
+
+  } catch (error) { 
+    console.error(error)
     res.status(500).json({ message: error.message });
   }
 };
 
+
 // Get student by ID
 const getStudentById = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const studentId = req.params.id
+    const student = await Student.findById(studentId);
+    const seatNo = await Seat.findOne({"student.studentId" : studentId})
+    console.log(seatNo.seatNumber)
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
-    res.json(student);
+    let studentObject = student.toObject()
+
+    
+    studentObject.seatNo = seatNo ? seatNo.seatNumber :  null
+    
+    
+    res.json({student : studentObject});
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -54,6 +86,7 @@ const createStudent = async (req, res) => {
     if (error.code === 11000) {
       return res.status(400).json({ message: 'Email already exists' });
     }
+    console.error(error)
     res.status(500).json({ message: error.message });
   }
 };
@@ -76,17 +109,42 @@ const updateStudent = async (req, res) => {
 };
 
 // Delete student
+// 
+
+
 const deleteStudent = async (req, res) => {
   try {
-    const student = await Student.findByIdAndDelete(req.params.id);
+    // pehle student dhoondo
+    const student = await Student.findById(req.params.id);
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
+
+    // seat jisme ye student hai
+    const seat = await Seat.findOne({ "student.studentId": req.params.id }).populate("student.studentId");
+    if (!seat) {
+      await student.deleteOne();
+      return res.json({ message: 'Student deleted (no seat assigned)' });
+    }
+
+    // student ko array se pull karo
+    await Seat.updateOne(
+      { _id: seat._id },
+      { 
+        $pull: { student: { studentId: req.params.id } },
+        $set: { occupied: false, seatOcupiedTiming: seat.student.length === 1 ? "none" : seat.seatOcupiedTiming }
+      }
+    );
+
+    // student document delete karo
+    await student.deleteOne();
+
     res.json({ message: 'Student deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 module.exports = {
   getStudents,

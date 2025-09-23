@@ -105,7 +105,8 @@ userSchema.pre('save', function(next) {
       dashboard: { read: false },
       admin: { create: false, read: false, update: false, delete: false }
     };
-  }
+  } 
+  
   next();
 });
 

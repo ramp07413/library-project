@@ -6,6 +6,9 @@ const studentSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  fatherName : {
+    type : String
+  },
   email: {
     type: String,
     required: true,
@@ -14,15 +17,16 @@ const studentSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: true
   },
   address: {
     type: String,
-    required: true
   },
   joinDate: {
     type: Date,
     required: true
+  },
+  endDate : {
+    type : Date,
   },
   shift: {
     type: String,
@@ -34,7 +38,9 @@ const studentSchema = new mongoose.Schema({
     enum : ['half', 'full'],
     default : 'full'
   },
-  
+  fee : {
+    type : Number
+  },
   status: {
     type: String,
     enum: ['active', 'inactive'],
