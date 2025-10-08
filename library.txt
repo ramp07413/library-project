@@ -1,0 +1,1342 @@
+# Library Management System API Documentation
+
+## 1. Introduction
+This document provides a comprehensive overview of the Library Management System backend API endpoints. It is designed to help frontend developers integrate with the backend services for managing students, payments, seats, expenses, and alerts.
+
+## 2. Authentication
+Most endpoints require authentication. The API uses JWT token-based authentication.
+To authenticate, include the `Authorization` header with the value `Bearer <YOUR_AUTH_TOKEN>` in your requests.
+
+**Base URL:** `http://localhost:5000/api`
+
+## 3. API Endpoints
+
+### 3.1. Authentication & User Management
+
+#### `POST /api/auth/register`
+*   Description: Registers a new user in the system.
+*   Authentication: None
+[example]
+*   Request Body:
+    ```json
+    {
+        "email": "admin@library.com",
+        "password": "admin123",
+        "role": "admin"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 201 Created):
+    ```json
+    {
+        "success": true,
+        "message": "User registered successfully",
+        "user": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+            "email": "admin@library.com",
+            "role": "admin",
+            "isActive": true,
+            "createdAt": "2024-09-26T10:30:00.000Z"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+[/response]
+
+#### `POST /api/auth/login`
+*   Description: Authenticates user and returns access token.
+*   Authentication: None
+[example]
+*   Request Body:
+    ```json
+    {
+        "email": "admin@library.com",
+        "password": "admin123"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Login successful",
+        "user": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+            "email": "admin@library.com",
+            "role": "admin",
+            "permissions": {
+                "students": ["read", "create", "update", "delete"],
+                "payments": ["read", "create", "update", "delete"],
+                "seats": ["read", "create", "update", "delete"],
+                "expenses": ["read", "create", "update", "delete"],
+                "alerts": ["read", "create", "update", "delete"],
+                "dashboard": ["read"]
+            }
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+[/response]
+
+#### `GET /api/auth/profile`
+*   Description: Retrieves the profile of the authenticated user.
+*   Authentication: Required (Bearer Token)
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "user": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+            "email": "admin@library.com",
+            "role": "admin",
+            "isActive": true,
+            "permissions": {
+                "students": ["read", "create", "update", "delete"],
+                "payments": ["read", "create", "update", "delete"]
+            },
+            "createdAt": "2024-09-26T10:30:00.000Z",
+            "updatedAt": "2024-09-26T10:30:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/auth/profile`
+*   Description: Updates the authenticated user's profile.
+*   Authentication: Required (Bearer Token)
+[example]
+*   Request Body:
+    ```json
+    {
+        "email": "admin@library.com",
+        "name": "Admin User"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Profile updated successfully",
+        "user": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+            "email": "admin@library.com",
+            "name": "Admin User",
+            "role": "admin",
+            "updatedAt": "2024-09-26T10:35:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/auth/change-password`
+*   Description: Changes the authenticated user's password.
+*   Authentication: Required (Bearer Token)
+[example]
+*   Request Body:
+    ```json
+    {
+        "currentPassword": "admin123",
+        "newPassword": "newpassword123"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Password changed successfully"
+    }
+    ```
+[/response]
+
+### 3.2. User Dashboard
+
+#### `GET /api/user/dashboard`
+*   Description: Retrieves user-specific dashboard data.
+*   Authentication: Required (Bearer Token)
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "dashboard": {
+            "totalPayments": 5,
+            "pendingPayments": 2,
+            "paidPayments": 3,
+            "totalAmount": 12500,
+            "pendingAmount": 5000,
+            "seatInfo": {
+                "seatNumber": "A001",
+                "assignedDate": "2024-09-01T00:00:00.000Z"
+            },
+            "recentAlerts": [
+                {
+                    "_id": "64f8a1b2c3d4e5f6a7b8c9d1",
+                    "title": "Payment Due",
+                    "message": "Your payment for September is due",
+                    "type": "warning",
+                    "createdAt": "2024-09-25T10:00:00.000Z"
+                }
+            ]
+        }
+    }
+    ```
+[/response]
+
+#### `GET /api/user/details`
+*   Description: Retrieves detailed information of the authenticated user.
+*   Authentication: Required (Bearer Token)
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "user": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+            "email": "student@library.com",
+            "role": "student",
+            "studentInfo": {
+                "name": "John Doe",
+                "phone": "+1234567890",
+                "address": "123 Main Street",
+                "shift": "morning"
+            }
+        }
+    }
+    ```
+[/response]
+
+#### `GET /api/user/payments`
+*   Description: Retrieves all payments for the authenticated user.
+*   Authentication: Required (Bearer Token)
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 3,
+        "payments": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9d2",
+                "amount": 2500,
+                "month": "September",
+                "year": 2024,
+                "status": "paid",
+                "paymentType": "cash",
+                "createdAt": "2024-09-01T00:00:00.000Z"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `GET /api/user/due-payments`
+*   Description: Retrieves pending/due payments for the authenticated user.
+*   Authentication: Required (Bearer Token)
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 1,
+        "duePayments": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9d3",
+                "amount": 2500,
+                "month": "October",
+                "year": 2024,
+                "status": "pending",
+                "dueDate": "2024-10-15T00:00:00.000Z"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `GET /api/user/alerts`
+*   Description: Retrieves alerts for the authenticated user.
+*   Authentication: Required (Bearer Token)
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 2,
+        "alerts": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9d4",
+                "title": "Payment Reminder",
+                "message": "Your monthly payment is due in 3 days",
+                "type": "info",
+                "priority": "medium",
+                "isRead": false,
+                "createdAt": "2024-09-23T10:00:00.000Z"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `GET /api/user/seat`
+*   Description: Retrieves seat information for the authenticated user.
+*   Authentication: Required (Bearer Token)
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "seat": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d5",
+            "seatNumber": "A001",
+            "isOccupied": true,
+            "assignedDate": "2024-09-01T00:00:00.000Z",
+            "student": {
+                "name": "John Doe",
+                "email": "john@example.com"
+            }
+        }
+    }
+    ```
+[/response]
+### 3.3. Student Management
+
+#### `GET /api/students`
+*   Description: Retrieves all students with optional filtering.
+*   Authentication: Required (Bearer Token)
+*   Permissions: students:read
+*   Query Parameters:
+    *   `search` (optional): Search by name or email
+    *   `shift` (optional): Filter by shift (morning, afternoon, evening, night, all)
+    *   `status` (optional): Filter by status (active, inactive, all)
+    *   `seatingType` (optional): Filter by seating type
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    [
+        {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d6",
+            "name": "John Doe",
+            "email": "john@example.com",
+            "phone": "+1234567890",
+            "address": "123 Main Street, City",
+            "shift": "morning",
+            "status": "active",
+            "seatingType": "premium",
+            "seatNo": "A001",
+            "createdAt": "2024-09-01T00:00:00.000Z",
+            "updatedAt": "2024-09-01T00:00:00.000Z"
+        }
+    ]
+    ```
+[/response]
+
+#### `GET /api/students/:id`
+*   Description: Retrieves a specific student by ID.
+*   Authentication: Required (Bearer Token)
+*   Permissions: students:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "student": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d6",
+            "name": "John Doe",
+            "email": "john@example.com",
+            "phone": "+1234567890",
+            "address": "123 Main Street, City",
+            "shift": "morning",
+            "status": "active",
+            "createdAt": "2024-09-01T00:00:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `POST /api/students`
+*   Description: Creates a new student.
+*   Authentication: Required (Bearer Token)
+*   Permissions: students:create
+[example]
+*   Request Body:
+    ```json
+    {
+        "name": "John Doe",
+        "email": "john@example.com",
+        "phone": "+1234567890",
+        "address": "123 Main Street, City",
+        "shift": "morning"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 201 Created):
+    ```json
+    {
+        "success": true,
+        "message": "Student created successfully",
+        "student": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d6",
+            "name": "John Doe",
+            "email": "john@example.com",
+            "phone": "+1234567890",
+            "address": "123 Main Street, City",
+            "shift": "morning",
+            "status": "active",
+            "createdAt": "2024-09-26T10:30:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/students/:id`
+*   Description: Updates an existing student.
+*   Authentication: Required (Bearer Token)
+*   Permissions: students:update
+[example]
+*   Request Body:
+    ```json
+    {
+        "name": "John Doe Updated",
+        "email": "john.updated@example.com",
+        "phone": "+1234567890",
+        "address": "456 Updated Street, City",
+        "shift": "evening"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Student updated successfully",
+        "student": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d6",
+            "name": "John Doe Updated",
+            "email": "john.updated@example.com",
+            "phone": "+1234567890",
+            "address": "456 Updated Street, City",
+            "shift": "evening",
+            "updatedAt": "2024-09-26T10:35:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `DELETE /api/students/:id`
+*   Description: Deletes a student.
+*   Authentication: Required (Bearer Token)
+*   Permissions: students:delete
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Student deleted successfully"
+    }
+    ```
+[/response]
+
+### 3.4. Payment Management
+
+#### `GET /api/payments`
+*   Description: Retrieves all payments with student information populated.
+*   Authentication: Required (Bearer Token)
+*   Permissions: payments:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 3,
+        "payments": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+                "studentId": {
+                    "_id": "64f8a1b2c3d4e5f6a7b8c9d6",
+                    "name": "John Doe",
+                    "email": "john@example.com",
+                    "phone": "+1234567890"
+                },
+                "amount": 2500,
+                "month": "September",
+                "year": 2024,
+                "status": "paid",
+                "paymentType": "cash",
+                "paidDate": "2024-09-15T10:30:00.000Z",
+                "createdAt": "2024-09-01T00:00:00.000Z"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `POST /api/payments/addPending`
+*   Description: Adds a new pending payment for a student.
+*   Authentication: Required (Bearer Token)
+*   Permissions: payments:create
+[example]
+*   Request Body:
+    ```json
+    {
+        "studentId": "64f8a1b2c3d4e5f6a7b8c9d6",
+        "amount": 2500,
+        "month": "January",
+        "year": 2024
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "payment added successfully !",
+        "paymentData": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+            "studentId": "64f8a1b2c3d4e5f6a7b8c9d6",
+            "amount": 2500,
+            "month": "January",
+            "year": 2024,
+            "status": "pending",
+            "createdAt": "2024-09-26T10:30:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/payments/depositPayment`
+*   Description: Marks payment as deposited or creates new paid payment.
+*   Authentication: Required (Bearer Token)
+*   Permissions: payments:update
+[example]
+*   Request Body:
+    ```json
+    {
+        "studentId": "64f8a1b2c3d4e5f6a7b8c9d6",
+        "amount": 2500,
+        "month": "January",
+        "year": 2024,
+        "paymentType": "cash"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "payment deposit successfully !",
+        "paymentData": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+            "studentId": "64f8a1b2c3d4e5f6a7b8c9d6",
+            "amount": 2500,
+            "month": "January",
+            "year": 2024,
+            "status": "paid",
+            "paymentType": "cash",
+            "paidDate": "2024-09-26T10:30:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `GET /api/payments/get/:id`
+*   Description: Retrieves all payments for a specific student.
+*   Authentication: Required (Bearer Token)
+*   Permissions: payments:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 2,
+        "payments": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+                "studentId": {
+                    "_id": "64f8a1b2c3d4e5f6a7b8c9d6",
+                    "name": "John Doe",
+                    "email": "john@example.com",
+                    "phone": "+1234567890"
+                },
+                "amount": 2500,
+                "month": "September",
+                "year": 2024,
+                "status": "paid"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `PATCH /api/payments/update/:id`
+*   Description: Updates payment details.
+*   Authentication: Required (Bearer Token)
+*   Permissions: payments:update
+[example]
+*   Request Body:
+    ```json
+    {
+        "amount": 3000,
+        "status": "paid"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "payment updated suceessfully !",
+        "paymentData": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+            "amount": 3000,
+            "status": "paid",
+            "updatedAt": "2024-09-26T10:35:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `DELETE /api/payments/delete/:id`
+*   Description: Deletes a payment record.
+*   Authentication: Required (Bearer Token)
+*   Permissions: payments:delete
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "payment deleted !"
+    }
+    ```
+[/response]
+### 3.5. Seat Management
+
+#### `GET /api/seats`
+*   Description: Retrieves all seats with assignment information.
+*   Authentication: Required (Bearer Token)
+*   Permissions: seats:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 5,
+        "seats": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9d8",
+                "seatNumber": "A001",
+                "isOccupied": true,
+                "student": {
+                    "studentId": "64f8a1b2c3d4e5f6a7b8c9d6",
+                    "assignedDate": "2024-09-01T00:00:00.000Z"
+                },
+                "createdAt": "2024-08-01T00:00:00.000Z"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `GET /api/seats/stats`
+*   Description: Retrieves seat occupancy statistics.
+*   Authentication: Required (Bearer Token)
+*   Permissions: seats:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "stats": {
+            "totalSeats": 50,
+            "occupiedSeats": 35,
+            "availableSeats": 15,
+            "occupancyRate": 70
+        }
+    }
+    ```
+[/response]
+
+#### `POST /api/seats/create`
+*   Description: Creates a new seat.
+*   Authentication: Required (Bearer Token)
+*   Permissions: seats:create
+[example]
+*   Request Body:
+    ```json
+    {
+        "seatNumber": "A001"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 201 Created):
+    ```json
+    {
+        "success": true,
+        "message": "Seat created successfully",
+        "seat": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d8",
+            "seatNumber": "A001",
+            "isOccupied": false,
+            "createdAt": "2024-09-26T10:30:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `POST /api/seats/assign`
+*   Description: Assigns seat to a student.
+*   Authentication: Required (Bearer Token)
+*   Permissions: seats:update
+[example]
+*   Request Body:
+    ```json
+    {
+        "seatNumber": "A001",
+        "studentId": "64f8a1b2c3d4e5f6a7b8c9d6"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Seat assigned successfully",
+        "seat": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d8",
+            "seatNumber": "A001",
+            "isOccupied": true,
+            "student": {
+                "studentId": "64f8a1b2c3d4e5f6a7b8c9d6",
+                "assignedDate": "2024-09-26T10:30:00.000Z"
+            }
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/seats/:id/unassign`
+*   Description: Unassigns seat from student.
+*   Authentication: Required (Bearer Token)
+*   Permissions: seats:update
+[example]
+*   Request Body:
+    ```json
+    {
+        "studentId": "64f8a1b2c3d4e5f6a7b8c9d6"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Seat unassigned successfully",
+        "seat": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d8",
+            "seatNumber": "A001",
+            "isOccupied": false,
+            "student": null
+        }
+    }
+    ```
+[/response]
+
+#### `DELETE /api/seats/delete`
+*   Description: Deletes a seat.
+*   Authentication: Required (Bearer Token)
+*   Permissions: seats:delete
+[example]
+*   Request Body:
+    ```json
+    {
+        "seatNumber": "A001"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Seat deleted successfully"
+    }
+    ```
+[/response]
+
+### 3.6. Expense Management
+
+#### `GET /api/expenses`
+*   Description: Retrieves all expenses.
+*   Authentication: Required (Bearer Token)
+*   Permissions: expenses:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 3,
+        "expenses": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9d9",
+                "title": "Office Supplies",
+                "amount": 500,
+                "category": "Supplies",
+                "description": "Monthly office supplies purchase",
+                "date": "2024-09-26T10:30:00.000Z",
+                "createdAt": "2024-09-26T10:30:00.000Z"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `GET /api/expenses/stats`
+*   Description: Retrieves expense statistics.
+*   Authentication: Required (Bearer Token)
+*   Permissions: expenses:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "stats": {
+            "totalExpenses": 15000,
+            "monthlyExpenses": 3500,
+            "categoryBreakdown": {
+                "Supplies": 5000,
+                "Utilities": 3000,
+                "Maintenance": 2000
+            }
+        }
+    }
+    ```
+[/response]
+
+#### `POST /api/expenses`
+*   Description: Creates a new expense.
+*   Authentication: Required (Bearer Token)
+*   Permissions: expenses:create
+[example]
+*   Request Body:
+    ```json
+    {
+        "title": "Office Supplies",
+        "amount": 500,
+        "category": "Supplies",
+        "description": "Monthly office supplies purchase"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 201 Created):
+    ```json
+    {
+        "success": true,
+        "message": "Expense created successfully",
+        "expense": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d9",
+            "title": "Office Supplies",
+            "amount": 500,
+            "category": "Supplies",
+            "description": "Monthly office supplies purchase",
+            "date": "2024-09-26T10:30:00.000Z",
+            "createdAt": "2024-09-26T10:30:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/expenses/:id`
+*   Description: Updates an existing expense.
+*   Authentication: Required (Bearer Token)
+*   Permissions: expenses:update
+[example]
+*   Request Body:
+    ```json
+    {
+        "title": "Office Supplies Updated",
+        "amount": 600,
+        "category": "Supplies",
+        "description": "Updated office supplies purchase"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Expense updated successfully",
+        "expense": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9d9",
+            "title": "Office Supplies Updated",
+            "amount": 600,
+            "category": "Supplies",
+            "description": "Updated office supplies purchase",
+            "updatedAt": "2024-09-26T10:35:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `DELETE /api/expenses/:id`
+*   Description: Deletes an expense.
+*   Authentication: Required (Bearer Token)
+*   Permissions: expenses:delete
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Expense deleted successfully"
+    }
+    ```
+[/response]
+
+### 3.7. Alert Management
+
+#### `GET /api/alerts`
+*   Description: Retrieves all alerts.
+*   Authentication: Required (Bearer Token)
+*   Permissions: alerts:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 5,
+        "alerts": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9da",
+                "title": "System Maintenance",
+                "message": "System will be under maintenance from 2 AM to 4 AM",
+                "type": "info",
+                "priority": "medium",
+                "isRead": false,
+                "createdAt": "2024-09-26T10:30:00.000Z"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `GET /api/alerts/stats`
+*   Description: Retrieves alert statistics.
+*   Authentication: Required (Bearer Token)
+*   Permissions: alerts:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "stats": {
+            "totalAlerts": 25,
+            "unreadAlerts": 8,
+            "readAlerts": 17,
+            "typeBreakdown": {
+                "info": 10,
+                "warning": 8,
+                "error": 4,
+                "success": 3
+            }
+        }
+    }
+    ```
+[/response]
+
+#### `POST /api/alerts`
+*   Description: Creates a new alert.
+*   Authentication: Required (Bearer Token)
+*   Permissions: alerts:create
+[example]
+*   Request Body:
+    ```json
+    {
+        "title": "System Maintenance",
+        "message": "System will be under maintenance from 2 AM to 4 AM",
+        "type": "info",
+        "priority": "medium"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 201 Created):
+    ```json
+    {
+        "success": true,
+        "message": "Alert created successfully",
+        "alert": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9da",
+            "title": "System Maintenance",
+            "message": "System will be under maintenance from 2 AM to 4 AM",
+            "type": "info",
+            "priority": "medium",
+            "isRead": false,
+            "createdAt": "2024-09-26T10:30:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/alerts/:id/read`
+*   Description: Marks an alert as read.
+*   Authentication: Required (Bearer Token)
+*   Permissions: alerts:update
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Alert marked as read",
+        "alert": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9da",
+            "isRead": true,
+            "updatedAt": "2024-09-26T10:35:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/alerts/read-all`
+*   Description: Marks all alerts as read.
+*   Authentication: Required (Bearer Token)
+*   Permissions: alerts:update
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "All alerts marked as read",
+        "modifiedCount": 8
+    }
+    ```
+[/response]
+
+#### `DELETE /api/alerts/:id`
+*   Description: Deletes an alert.
+*   Authentication: Required (Bearer Token)
+*   Permissions: alerts:delete
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "Alert deleted successfully"
+    }
+    ```
+[/response]
+
+### 3.8. Admin Management
+
+#### `GET /api/admin/users`
+*   Description: Retrieves all users (admin only).
+*   Authentication: Required (Bearer Token)
+*   Permissions: Admin role required
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "results": 10,
+        "users": [
+            {
+                "_id": "64f8a1b2c3d4e5f6a7b8c9db",
+                "email": "user@library.com",
+                "role": "student",
+                "isActive": true,
+                "createdAt": "2024-09-01T00:00:00.000Z"
+            }
+        ]
+    }
+    ```
+[/response]
+
+#### `GET /api/admin/users/stats`
+*   Description: Retrieves user statistics (admin only).
+*   Authentication: Required (Bearer Token)
+*   Permissions: Admin role required
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "stats": {
+            "totalUsers": 150,
+            "activeUsers": 140,
+            "inactiveUsers": 10,
+            "roleBreakdown": {
+                "student": 130,
+                "admin": 15,
+                "super_admin": 5
+            }
+        }
+    }
+    ```
+[/response]
+
+#### `POST /api/admin/users`
+*   Description: Creates a new admin user (admin only).
+*   Authentication: Required (Bearer Token)
+*   Permissions: Admin role required
+[example]
+*   Request Body:
+    ```json
+    {
+        "email": "newadmin@library.com",
+        "password": "admin123",
+        "role": "admin"
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 201 Created):
+    ```json
+    {
+        "success": true,
+        "message": "Admin user created successfully",
+        "user": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9db",
+            "email": "newadmin@library.com",
+            "role": "admin",
+            "isActive": true,
+            "createdAt": "2024-09-26T10:30:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/admin/users/:id/permissions`
+*   Description: Updates user permissions (admin only).
+*   Authentication: Required (Bearer Token)
+*   Permissions: Admin role required
+[example]
+*   Request Body:
+    ```json
+    {
+        "permissions": {
+            "students": ["read", "create"],
+            "payments": ["read"]
+        }
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "User permissions updated successfully",
+        "user": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9db",
+            "permissions": {
+                "students": ["read", "create"],
+                "payments": ["read"]
+            },
+            "updatedAt": "2024-09-26T10:35:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `PUT /api/admin/users/:id/status`
+*   Description: Toggles user active status (admin only).
+*   Authentication: Required (Bearer Token)
+*   Permissions: Admin role required
+[example]
+*   Request Body:
+    ```json
+    {
+        "isActive": false
+    }
+    ```
+[/example]
+
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "User status updated successfully",
+        "user": {
+            "_id": "64f8a1b2c3d4e5f6a7b8c9db",
+            "isActive": false,
+            "updatedAt": "2024-09-26T10:35:00.000Z"
+        }
+    }
+    ```
+[/response]
+
+#### `DELETE /api/admin/users/:id`
+*   Description: Deletes a user (super admin only).
+*   Authentication: Required (Bearer Token)
+*   Permissions: Super Admin role required
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "message": "User deleted successfully"
+    }
+    ```
+[/response]
+
+### 3.9. Dashboard Analytics
+
+#### `GET /api/dashboard/stats`
+*   Description: Retrieves dashboard statistics.
+*   Authentication: Required (Bearer Token)
+*   Permissions: dashboard:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "stats": {
+            "totalStudents": 150,
+            "activeStudents": 140,
+            "totalSeats": 200,
+            "occupiedSeats": 135,
+            "totalPayments": 1250000,
+            "pendingPayments": 125000,
+            "monthlyRevenue": 350000,
+            "totalExpenses": 45000
+        }
+    }
+    ```
+[/response]
+
+#### `GET /api/dashboard/revenue-analytics`
+*   Description: Retrieves revenue analytics data.
+*   Authentication: Required (Bearer Token)
+*   Permissions: dashboard:read
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "success": true,
+        "analytics": {
+            "monthlyRevenue": [
+                { "month": "Jan", "revenue": 320000 },
+                { "month": "Feb", "revenue": 350000 },
+                { "month": "Mar", "revenue": 380000 }
+            ],
+            "paymentTrends": {
+                "totalCollected": 1250000,
+                "totalPending": 125000,
+                "collectionRate": 90.9
+            },
+            "expenseBreakdown": {
+                "utilities": 15000,
+                "maintenance": 12000,
+                "supplies": 8000,
+                "other": 10000
+            }
+        }
+    }
+    ```
+[/response]
+
+### 3.10. Health Check
+
+#### `GET /api/health`
+*   Description: Checks server health status.
+*   Authentication: None
+[response]
+*   Response (Success - 200 OK):
+    ```json
+    {
+        "status": "OK",
+        "message": "Server is running"
+    }
+    ```
+[/response]
+
+## 4. Common Error Responses
+
+### 4.1. Authentication Errors
+*   **401 Unauthorized:**
+    ```json
+    {
+        "success": false,
+        "message": "Access denied. No token provided"
+    }
+    ```
+
+*   **403 Forbidden:**
+    ```json
+    {
+        "success": false,
+        "message": "Access denied. Insufficient permissions"
+    }
+    ```
+
+### 4.2. Validation Errors
+*   **422 Unprocessable Entity:**
+    ```json
+    {
+        "success": false,
+        "message": "Validation failed",
+        "errors": [
+            {
+                "field": "email",
+                "message": "Please provide a valid email"
+            }
+        ]
+    }
+    ```
+
+### 4.3. Server Errors
+*   **500 Internal Server Error:**
+    ```json
+    {
+        "success": false,
+        "message": "Internal server error"
+    }
+    ```
+
+## 5. Postman Collection
+Import the provided Postman collection for easy API testing:
+*   **File:** `Library-Management-API-Complete.postman_collection.json`
+*   **Base URL Variable:** `http://localhost:5000/api`
+*   **Authentication:** Login first to automatically set `auth_token` variable
+
+## 6. Environment Setup
+1. Start MongoDB service
+2. Set environment variables in `.env` file
+3. Run: `npm run dev`
+4. API available at: `http://localhost:5000/api`
+
+---
+**Last Updated:** September 26, 2025  
+**Version:** 1.0.0
